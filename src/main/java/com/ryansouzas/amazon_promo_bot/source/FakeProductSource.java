@@ -7,8 +7,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-public class FakeProductSource {
+public class FakeProductSource implements ProductSource{
 
+    @Override
     public List<Product> findProducts() {
         return List.of(
                 new Product(
