@@ -46,7 +46,7 @@ public class ProductValidator {
             );
         }
 
-        if (original.compareTo(currentPrice) > 0){
+        if (currentPrice.compareTo(original) > 0){
             throw new InvalidProductException(
                     "Current price cannot exceed original price"
             );
@@ -62,7 +62,7 @@ public class ProductValidator {
         try {
             URI uri = URI.create(url);
 
-            if("https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null){
+            if(!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null){
                 throw new InvalidProductException("Product URL must be valid HTTPS URL");
             }
 
