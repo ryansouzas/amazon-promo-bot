@@ -18,7 +18,7 @@ public class PromotionController {
     @PostMapping("/test")
     public ResponseEntity<Void> sendTest() {
 
-        promotionService.publishPromotion();
+        promotionService.publishPromotions();
 
         return ResponseEntity.noContent().build();
     }

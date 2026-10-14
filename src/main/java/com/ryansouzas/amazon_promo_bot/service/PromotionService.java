@@ -1,13 +1,15 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
+import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
+import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
 import com.ryansouzas.amazon_promo_bot.model.Product;
-import com.ryansouzas.amazon_promo_bot.source.FakeProductSource;
+import com.ryansouzas.amazon_promo_bot.source.ProductSource;
+import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -15,52 +17,33 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PromotionService {
 
-    private static final BigDecimal MIN_DISCOUNT = new BigDecimal("15");
 
-    private final FakeProductSource productSource;
-    private final TelegramService telegramService;
+    private final ProductSource productSource;
+    private final ProductValidator productValidator;
+    private final PromotionEvaluator promotionEvaluator;
+    private final PromotionPublisher promotionPublisher;
 
-    public void publishPromotion(){
+    public void publishPromotions(){
         List<Product> products = productSource.findProducts();
         products.forEach(product -> {
-            BigDecimal discount = calculateDiscount(product);
-            if (discount.compareTo(MIN_DISCOUNT) >= 0){
+            try {
+                productValidator.validate(product);
 
-                String message = formatMessage(product, discount);
-                log.info(message);
-                telegramService.sendMessage(message);
+                if (!promotionEvaluator.isPromotion(product)) {
+                    return;
+                }
+
+                BigDecimal discount = promotionEvaluator.calculateDiscount(product);
+                promotionPublisher.publisher(product, discount);
+
+            }catch (InvalidProductException e){
+                log.warn("Invalid product {}", e.getMessage());
+
+            }catch (TelegramIntegrationException e){
+                log.warn("Failed to publish product {}", product.externalId());
             }
         });
     }
 
-    private BigDecimal calculateDiscount(Product product){
-        BigDecimal difference = product.originalPrice().subtract(product.currentPrice());
-
-        return difference
-                .multiply(new BigDecimal(100))
-                .divide(product.originalPrice(), 2, RoundingMode.HALF_UP);
-    }
-
-    private String formatMessage(
-            Product product,
-            BigDecimal discount
-    ) {
-        return """
-                PROMOÇÃO ENCONTRADA!
-
-                Produto: %s
-                Preço original: R$ %s
-                Preço atual: R$ %s
-                Desconto: %s%%
-
-                Confira: %s
-                """.formatted(
-                product.name(),
-                product.originalPrice(),
-                product.currentPrice(),
-                discount,
-                product.url()
-        );
-    }
 
 }
