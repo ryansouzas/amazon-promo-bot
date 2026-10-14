@@ -3,9 +3,13 @@ package com.ryansouzas.amazon_promo_bot.service;
 
 import com.ryansouzas.amazon_promo_bot.config.TelegramProperties;
 import com.ryansouzas.amazon_promo_bot.dto.TelegramMessageRequest;
+import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
+@Slf4j
 @Service
 public class TelegramService {
 
@@ -27,11 +31,25 @@ public class TelegramService {
                         message
                 );
 
-        restClient.post()
-                .uri("/bot{token}/sendMessage",
-                        properties.token())
-                .body(request)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+
+            restClient.post()
+                    .uri("/bot{token}/sendMessage",
+                            properties.token())
+                    .body(request)
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("Sent message to telegram");
+
+        } catch (RestClientException e) {
+
+            log.error(
+                    "Failed to send message to telegram {}",
+                    e.getClass().getSimpleName());
+
+            throw new TelegramIntegrationException(
+                    "Failed to comunicate with Telegram: {}", e);
+        }
     }
+
 }
