@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 
 @Component
-public class ProductValidation {
+public class ProductValidator {
 
     public void validate(Product product) {
         if (product == null){
