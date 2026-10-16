@@ -14,7 +14,7 @@ public class PromotionEvaluator {
     public boolean isPromotion(Product product) {
 
         BigDecimal discount = calculateDiscount(product);
-        return discount.compareTo(MIN_DISCOUNT) > 0;
+        return discount.compareTo(MIN_DISCOUNT) >= 0;
 
     }
 
