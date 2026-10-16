@@ -16,9 +16,9 @@ public class TelegramService {
     private final RestClient restClient;
     private final TelegramProperties properties;
 
-    public TelegramService(TelegramProperties properties) {
+    public TelegramService( RestClient.Builder builder, TelegramProperties properties) {
         this.properties = properties;
-        this.restClient = RestClient.builder()
+        this.restClient = builder
                 .baseUrl("https://api.telegram.org")
                 .build();
     }
