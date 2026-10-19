@@ -48,7 +48,7 @@ public class TelegramService {
                     e.getClass().getSimpleName());
 
             throw new TelegramIntegrationException(
-                    "Failed to comunicate with Telegram: {}", e);
+                    "Failed to comunicate with Telegram", e);
         }
     }
 
