@@ -408,35 +408,9 @@ Linux/macOS:
 
 A relação de cenários acima descreve os testes presentes no código; não representa um relatório de execução ou medição de cobertura.
 
-## Limitações atuais
 
-- Os produtos e preços são fictícios; não há integração de consulta à Amazon.
-- O acionamento é manual, por HTTP; não existe scheduler.
-- Não há banco de dados, ORM, histórico de preços ou histórico de publicações.
-- Não existe deduplicação ou garantia de idempotência entre chamadas.
-- Não há geração ou conversão de links de afiliado.
-- O percentual mínimo é fixo no código.
-- Há um único chat de destino configurado por execução.
-- As mensagens são de texto, sem imagens, botões ou formatação via `parse_mode`.
-- Não há autenticação ou autorização para o endpoint.
-- Não há retry, backoff ou tratamento específico de limites de requisições.
-- Não há métricas, health checks adicionais ou configuração de deploy e Docker no projeto analisado.
-- A resposta HTTP não informa quantas ofertas foram publicadas, ignoradas ou tiveram falha.
 
-## Possíveis evoluções
 
-Os itens abaixo são propostas para etapas futuras e não fazem parte do MVP implementado:
-
-- Substituir a fonte fictícia por uma integração de produtos e ofertas reais.
-- Persistir produtos, preços e publicações com PostgreSQL e JPA.
-- Impedir envios duplicados e definir critérios de republicação.
-- Agendar consultas e publicações periódicas.
-- Tornar o desconto mínimo e outros filtros configuráveis.
-- Ampliar os testes para continuidade após falha do Telegram, múltiplas ofertas e endpoint REST.
-- Adicionar retry e tratamento específico para falhas transitórias.
-- Expor um resumo do processamento.
-- Adicionar métricas, empacotamento Docker e deploy.
-- Integrar links de afiliado quando a fonte e os requisitos da integração estiverem definidos.
 
 ## Autor
 
