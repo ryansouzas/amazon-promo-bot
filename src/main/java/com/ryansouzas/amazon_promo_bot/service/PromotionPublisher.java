@@ -12,7 +12,7 @@ public class PromotionPublisher {
 
     private final TelegramService telegramService;
 
-    public void publisher(Product product, BigDecimal discount) {
+    public void publish(Product product, BigDecimal discount) {
 
         String message = formatMessage(product, discount);
 

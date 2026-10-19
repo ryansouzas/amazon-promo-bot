@@ -34,7 +34,7 @@ public class PromotionService {
                 }
 
                 BigDecimal discount = promotionEvaluator.calculateDiscount(product);
-                promotionPublisher.publisher(product, discount);
+                promotionPublisher.publish(product, discount);
 
             }catch (InvalidProductException e){
                 log.warn("Invalid product {}", e.getMessage());
