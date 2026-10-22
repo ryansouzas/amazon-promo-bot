@@ -1,6 +1,6 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,15 +12,15 @@ public class PromotionPublisher {
 
     private final TelegramService telegramService;
 
-    public void publish(Product product, BigDecimal discount) {
+    public void publish(ProductDTO productDTO, BigDecimal discount) {
 
-        String message = formatMessage(product, discount);
+        String message = formatMessage(productDTO, discount);
 
         telegramService.sendMessage(message);
     }
 
     private String formatMessage(
-            Product product,
+            ProductDTO productDTO,
             BigDecimal discount
     ) {
         return """
@@ -33,11 +33,11 @@ public class PromotionPublisher {
 
                 Confira: %s
                 """.formatted(
-                product.name(),
-                product.originalPrice(),
-                product.currentPrice(),
+                productDTO.name(),
+                productDTO.originalPrice(),
+                productDTO.currentPrice(),
                 discount,
-                product.url()
+                productDTO.url()
         );
     }
 }

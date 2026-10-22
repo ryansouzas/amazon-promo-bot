@@ -2,7 +2,7 @@ package com.ryansouzas.amazon_promo_bot.service;
 
 import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
 import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,8 @@ public class PromotionService {
     private final PromotionPublisher promotionPublisher;
 
     public void publishPromotions(){
-        List<Product> products = productSource.findProducts();
-        products.forEach(product -> {
+        List<ProductDTO> productDTOS = productSource.findProducts();
+        productDTOS.forEach(product -> {
             try {
                 productValidator.validate(product);
 

@@ -1,7 +1,7 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
 import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
 import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,15 +35,15 @@ class PromotionServiceTest {
     @InjectMocks
     private PromotionService promotionService;
 
-    private Product validProduct;
-    private Product invalidProduct;
+    private ProductDTO validProductDTO;
+    private ProductDTO invalidProductDTO;
 
     private static final BigDecimal DISCOUNT = new BigDecimal("50.00");
 
     @BeforeEach
     void setUp() {
 
-        validProduct = new Product(
+        validProductDTO = new ProductDTO(
                 "AMZ-001",
                 "Mouse Gamer",
                 new BigDecimal("200.00"),
@@ -51,7 +51,7 @@ class PromotionServiceTest {
                 "https://example.com/mouse"
         );
 
-        invalidProduct = new Product(
+        invalidProductDTO = new ProductDTO(
                 "",
                 "Produto Inválido",
                 new BigDecimal("200.00"),
@@ -66,36 +66,36 @@ class PromotionServiceTest {
 
 
         when(productSource.findProducts())
-                .thenReturn(List.of(validProduct));
+                .thenReturn(List.of(validProductDTO));
 
-        when(promotionEvaluator.isPromotion(validProduct))
+        when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(true);
 
-        when(promotionEvaluator.calculateDiscount(validProduct))
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
                 .thenReturn(DISCOUNT);
 
 
         promotionService.publishPromotions();
 
 
-        verify(productValidator).validate(validProduct);
+        verify(productValidator).validate(validProductDTO);
 
         verify(promotionPublisher)
-                .publish(validProduct, DISCOUNT);
+                .publish(validProductDTO, DISCOUNT);
     }
 
     @Test
     void shouldNotPublishProductWithoutPromotion() {
 
         when(productSource.findProducts())
-                .thenReturn(List.of(validProduct));
+                .thenReturn(List.of(validProductDTO));
 
-        when(promotionEvaluator.isPromotion(validProduct))
+        when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(false);
 
         promotionService.publishPromotions();
 
-        verify(productValidator).validate(validProduct);
+        verify(productValidator).validate(validProductDTO);
 
         verify(promotionEvaluator, never())
                 .calculateDiscount(any());
@@ -107,15 +107,15 @@ class PromotionServiceTest {
     void shouldSkipInvalidProduct() {
 
         when(productSource.findProducts())
-                .thenReturn(List.of(invalidProduct));
+                .thenReturn(List.of(invalidProductDTO));
 
         doThrow(new InvalidProductException("Invalid product"))
                 .when(productValidator)
-                .validate(invalidProduct);
+                .validate(invalidProductDTO);
 
         promotionService.publishPromotions();
 
-        verify(productValidator).validate(invalidProduct);
+        verify(productValidator).validate(invalidProductDTO);
 
         verifyNoInteractions(promotionEvaluator);
         verifyNoInteractions(promotionPublisher);
@@ -125,28 +125,28 @@ class PromotionServiceTest {
     void shouldContinueProcessingAfterInvalidProduct() {
 
         when(productSource.findProducts())
-                .thenReturn(List.of(invalidProduct, validProduct));
+                .thenReturn(List.of(invalidProductDTO, validProductDTO));
 
         doThrow(new InvalidProductException("Invalid product"))
                 .when(productValidator)
-                .validate(invalidProduct);
+                .validate(invalidProductDTO);
 
-        when(promotionEvaluator.isPromotion(validProduct))
+        when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(true);
 
-        when(promotionEvaluator.calculateDiscount(validProduct))
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
                 .thenReturn(DISCOUNT);
 
         promotionService.publishPromotions();
 
-        verify(productValidator).validate(invalidProduct);
-        verify(productValidator).validate(validProduct);
+        verify(productValidator).validate(invalidProductDTO);
+        verify(productValidator).validate(validProductDTO);
 
         verify(promotionPublisher)
-                .publish(validProduct, DISCOUNT);
+                .publish(validProductDTO, DISCOUNT);
 
         verify(promotionPublisher, never())
-                .publish(eq(invalidProduct), any(BigDecimal.class));
+                .publish(eq(invalidProductDTO), any(BigDecimal.class));
     }
 
 

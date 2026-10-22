@@ -1,7 +1,7 @@
 package com.ryansouzas.amazon_promo_bot.validation;
 
 import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,14 +25,14 @@ public class ProductValidatorTest {
     private static final BigDecimal NEGATIVE_PRICE = new BigDecimal("-100.00");
 
     private ProductValidator validator;
-    private Product validProduct;
+    private ProductDTO validProductDTO;
 
 
     @BeforeEach
     public void setUp(){
         validator = new ProductValidator();
 
-        validProduct = new Product(
+        validProductDTO = new ProductDTO(
                 "AMZ-001",
                 "Mouse Gamer",
                 ORIGINAL_PRICE,
@@ -45,7 +45,7 @@ public class ProductValidatorTest {
     @Test
     void shouldValidateValidProductSuccessfully() {
         assertDoesNotThrow(() ->
-                validator.validate(validProduct)
+                validator.validate(validProductDTO)
         );
     }
 
@@ -63,16 +63,16 @@ public class ProductValidatorTest {
         String [] invalidExternalIds = {null, "", " ", "  "};
 
         for (String externalId : invalidExternalIds) {
-            Product product = new Product(
+            ProductDTO productDTO = new ProductDTO(
                     externalId,
-                    validProduct.name(),
-                    validProduct.originalPrice(),
-                    validProduct.currentPrice(),
-                    validProduct.url()
+                    validProductDTO.name(),
+                    validProductDTO.originalPrice(),
+                    validProductDTO.currentPrice(),
+                    validProductDTO.url()
             );
 
             assertThrows(InvalidProductException.class,
-                    () -> validator.validate(product));
+                    () -> validator.validate(productDTO));
         }
 
 
@@ -82,159 +82,159 @@ public class ProductValidatorTest {
     @NullAndEmptySource
     @ValueSource(strings = {" ", "   "})
     void shouldRejectBlankName(String name) {
-        Product product = new Product(
-                validProduct.externalId(),
+        ProductDTO productDTO = new ProductDTO(
+                validProductDTO.externalId(),
                 name,
-                validProduct.originalPrice(),
-                validProduct.currentPrice(),
-                validProduct.url()
+                validProductDTO.originalPrice(),
+                validProductDTO.currentPrice(),
+                validProductDTO.url()
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectNullOriginalPrice() {
-        Product product = productWithPrices(
-                null, validProduct.currentPrice()
+        ProductDTO productDTO = productWithPrices(
+                null, validProductDTO.currentPrice()
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
 
     }
 
     @Test
     void shouldRejectNullCurrentPrice() {
-        Product product = productWithPrices(
-               validProduct.originalPrice(), null
+        ProductDTO productDTO = productWithPrices(
+               validProductDTO.originalPrice(), null
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectZeroOriginalPrice() {
-        Product product = productWithPrices(
-                ZERO_PRICE, validProduct.currentPrice()
+        ProductDTO productDTO = productWithPrices(
+                ZERO_PRICE, validProductDTO.currentPrice()
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectZeroCurrentPrice() {
-        Product product = productWithPrices(
-                validProduct.originalPrice(), ZERO_PRICE
+        ProductDTO productDTO = productWithPrices(
+                validProductDTO.originalPrice(), ZERO_PRICE
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectNegativeOriginalPrice() {
-        Product product = productWithPrices(
-                NEGATIVE_PRICE, validProduct.currentPrice()
+        ProductDTO productDTO = productWithPrices(
+                NEGATIVE_PRICE, validProductDTO.currentPrice()
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectNegativeCurrentPrice() {
-        Product product = productWithPrices(
-                validProduct.originalPrice(), NEGATIVE_PRICE
+        ProductDTO productDTO = productWithPrices(
+                validProductDTO.originalPrice(), NEGATIVE_PRICE
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectCurrentPriceGreaterThanOriginal() {
-        Product product = productWithPrices(
-                validProduct.originalPrice(), PRICE_ABOVE_ORIGINAL
+        ProductDTO productDTO = productWithPrices(
+                validProductDTO.originalPrice(), PRICE_ABOVE_ORIGINAL
         );
 
         assertThrows(InvalidProductException.class,
-                () -> validator.validate(product));
+                () -> validator.validate(productDTO));
 
     }
 
     @Test
     void shouldAcceptEqualPrices() {
-        BigDecimal equalPrice = validProduct.originalPrice();
+        BigDecimal equalPrice = validProductDTO.originalPrice();
 
-        Product product = productWithPrices(
-                validProduct.originalPrice(), equalPrice
+        ProductDTO productDTO = productWithPrices(
+                validProductDTO.originalPrice(), equalPrice
         );
 
-        assertEquals( validProduct.originalPrice(), product.currentPrice());
-        assertDoesNotThrow(() -> validator.validate(product));
+        assertEquals( validProductDTO.originalPrice(), productDTO.currentPrice());
+        assertDoesNotThrow(() -> validator.validate(productDTO));
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "   "})
     void shouldRejectBlankUrl(String url) {
-        Product product = productWithUrl(url);
+        ProductDTO productDTO = productWithUrl(url);
 
         assertThrows(InvalidProductException.class, () ->
-                validator.validate(product));
+                validator.validate(productDTO));
     }
 
     @Test
     void shouldAcceptValidHttpsUrl() {
-        Product product = productWithUrl("https://example.com/mouse");
-        assertEquals( validProduct.url(), product.url());
+        ProductDTO productDTO = productWithUrl("https://example.com/mouse");
+        assertEquals( validProductDTO.url(), productDTO.url());
 
-        assertDoesNotThrow(() -> validator.validate(product));
+        assertDoesNotThrow(() -> validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectHttpUrl() {
-        Product product = productWithUrl("http://example.com/mouse");
+        ProductDTO productDTO = productWithUrl("http://example.com/mouse");
 
         assertThrows(InvalidProductException.class, () ->
-                validator.validate(product));
+                validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectMalformedUrl() {
-        Product product = productWithUrl("Https://exa mpl.com/mouse");
+        ProductDTO productDTO = productWithUrl("Https://exa mpl.com/mouse");
 
         assertThrows(InvalidProductException.class, () ->
-                validator.validate(product));
+                validator.validate(productDTO));
     }
 
     @Test
     void shouldRejectHttpsUrlWithoutHost() {
-        Product product = productWithUrl("https:/");
+        ProductDTO productDTO = productWithUrl("https:/");
         assertThrows(InvalidProductException.class, () ->
-                validator.validate(product));
+                validator.validate(productDTO));
     }
 
-    private Product productWithPrices(BigDecimal original, BigDecimal current) {
-        return new Product(
-                validProduct.externalId(),
-                validProduct.name(),
+    private ProductDTO productWithPrices(BigDecimal original, BigDecimal current) {
+        return new ProductDTO(
+                validProductDTO.externalId(),
+                validProductDTO.name(),
                 original,
                 current,
-                validProduct.url()
+                validProductDTO.url()
         );
     }
 
-    private Product productWithUrl(String url) {
-        return new Product(
-                validProduct.externalId(),
-                validProduct.name(),
-                validProduct.originalPrice(),
-                validProduct.currentPrice(),
+    private ProductDTO productWithUrl(String url) {
+        return new ProductDTO(
+                validProductDTO.externalId(),
+                validProductDTO.name(),
+                validProductDTO.originalPrice(),
+                validProductDTO.currentPrice(),
                 url
         );
     }

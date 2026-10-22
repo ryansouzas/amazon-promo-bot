@@ -1,6 +1,6 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,13 +33,13 @@ public class PromotionEvaluatorTest {
     private static final BigDecimal ROUNDING_CURRENT_PRICE = new BigDecimal("199.99");
 
     private PromotionEvaluator promotionEvaluator;
-    private Product product;
+    private ProductDTO productDTO;
 
     @BeforeEach
     void setUp() {
         promotionEvaluator = new PromotionEvaluator();
 
-        product = new Product(
+        productDTO = new ProductDTO(
                 "AMZ-001",
                 "Mouse Gamer",
                 ORIGINAL_PRICE,
@@ -51,7 +51,7 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldAcceptDiscountAboveMinimum() {
         assertTrue(() ->
-                promotionEvaluator.isPromotion(product)
+                promotionEvaluator.isPromotion(productDTO)
         );
 
     }
@@ -59,60 +59,60 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldAcceptDiscountEqualToMinimum() {
 
-       Product product = productWithPrices(ORIGINAL_PRICE, CURRENT_PRICE_AT_MINIMUM_DISCOUNT);
+       ProductDTO productDTO = productWithPrices(ORIGINAL_PRICE, CURRENT_PRICE_AT_MINIMUM_DISCOUNT);
 
         assertTrue(() ->
-                promotionEvaluator.isPromotion(product)
+                promotionEvaluator.isPromotion(productDTO)
         );
     }
 
     @Test
     void shouldRejectDiscountBelowMinimum() {
 
-        Product product = productWithPrices(ORIGINAL_PRICE, CURRENT_PRICE_BELOW_MINIMUM_DISCOUNT);
+        ProductDTO productDTO = productWithPrices(ORIGINAL_PRICE, CURRENT_PRICE_BELOW_MINIMUM_DISCOUNT);
 
         assertFalse(() ->
-                promotionEvaluator.isPromotion(product)
+                promotionEvaluator.isPromotion(productDTO)
         );
     }
 
     @Test
     void shouldRejectProductWithoutDiscount() {
 
-        Product productWithoutDiscount = productWithPrices(
+        ProductDTO productDTOWithoutDiscount = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE_WITHOUT_DISCOUNT
         );
 
-        assertFalse(promotionEvaluator.isPromotion(productWithoutDiscount));
+        assertFalse(promotionEvaluator.isPromotion(productDTOWithoutDiscount));
     }
 
     @Test
     void shouldAcceptDiscountJustAboveMinimum() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE_JUST_ABOVE_MINIMUM_DISCOUNT
         );
 
-        assertTrue(promotionEvaluator.isPromotion(promotionalProduct));
+        assertTrue(promotionEvaluator.isPromotion(promotionalProductDTO));
     }
 
     @Test
     void shouldRejectDiscountJustBelowMinimum() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE_JUST_BELOW_MINIMUM_DISCOUNT
         );
 
-        assertFalse(promotionEvaluator.isPromotion(promotionalProduct));
+        assertFalse(promotionEvaluator.isPromotion(promotionalProductDTO));
     }
 
     @Test
     void shouldCalculateFiftyPercentDiscount() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE
         );
@@ -120,7 +120,7 @@ public class PromotionEvaluatorTest {
         BigDecimal expectedDiscount = new BigDecimal("50.00");
 
         BigDecimal actualDiscount =
-                promotionEvaluator.calculateDiscount(promotionalProduct);
+                promotionEvaluator.calculateDiscount(promotionalProductDTO);
 
         assertEquals(expectedDiscount, actualDiscount);
     }
@@ -128,7 +128,7 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldCalculateFifteenPercentDiscount() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE_AT_MINIMUM_DISCOUNT
         );
@@ -136,7 +136,7 @@ public class PromotionEvaluatorTest {
         BigDecimal expectedDiscount = new BigDecimal("15.00");
 
         BigDecimal actualDiscount =
-                promotionEvaluator.calculateDiscount(promotionalProduct);
+                promotionEvaluator.calculateDiscount(promotionalProductDTO);
 
         assertEquals(expectedDiscount, actualDiscount);
     }
@@ -144,7 +144,7 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldCalculateZeroPercentDiscount() {
 
-        Product productWithoutDiscount = productWithPrices(
+        ProductDTO productDTOWithoutDiscount = productWithPrices(
                 ORIGINAL_PRICE,
                 CURRENT_PRICE_WITHOUT_DISCOUNT
         );
@@ -152,7 +152,7 @@ public class PromotionEvaluatorTest {
         BigDecimal expectedDiscount = new BigDecimal("0.00");
 
         BigDecimal actualDiscount =
-                promotionEvaluator.calculateDiscount(productWithoutDiscount);
+                promotionEvaluator.calculateDiscount(productDTOWithoutDiscount);
 
         assertEquals(expectedDiscount, actualDiscount);
     }
@@ -160,7 +160,7 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldCalculateDiscountWithDecimalPrices() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 DECIMAL_ORIGINAL_PRICE,
                 DECIMAL_CURRENT_PRICE
         );
@@ -168,7 +168,7 @@ public class PromotionEvaluatorTest {
         BigDecimal expectedDiscount = new BigDecimal("25.01");
 
         BigDecimal actualDiscount =
-                promotionEvaluator.calculateDiscount(promotionalProduct);
+                promotionEvaluator.calculateDiscount(promotionalProductDTO);
 
         assertEquals(expectedDiscount, actualDiscount);
     }
@@ -176,7 +176,7 @@ public class PromotionEvaluatorTest {
     @Test
     void shouldRoundDiscountToTwoDecimalPlaces() {
 
-        Product promotionalProduct = productWithPrices(
+        ProductDTO promotionalProductDTO = productWithPrices(
                 ROUNDING_ORIGINAL_PRICE,
                 ROUNDING_CURRENT_PRICE
         );
@@ -184,18 +184,18 @@ public class PromotionEvaluatorTest {
         BigDecimal expectedDiscount = new BigDecimal("33.34");
 
         BigDecimal actualDiscount =
-                promotionEvaluator.calculateDiscount(promotionalProduct);
+                promotionEvaluator.calculateDiscount(promotionalProductDTO);
 
         assertEquals(expectedDiscount, actualDiscount);
     }
 
-    private Product productWithPrices(BigDecimal original, BigDecimal current) {
-        return new Product(
-                product.externalId(),
-                product.name(),
+    private ProductDTO productWithPrices(BigDecimal original, BigDecimal current) {
+        return new ProductDTO(
+                productDTO.externalId(),
+                productDTO.name(),
                 original,
                 current,
-                product.url()
+                productDTO.url()
         );
     }
 }

@@ -98,7 +98,7 @@ Os pacotes Java ficam sob `com.ryansouzas.amazon_promo_bot`.
 | `src/main/java/.../controller/` | `PromotionController`. |
 | `src/main/java/.../dto/` | `TelegramMessageRequest`. |
 | `src/main/java/.../exceptions/` | Exceções de validação e integração. |
-| `src/main/java/.../model/` | Record `Product`. |
+| `src/main/java/.../model/` | Record `ProductDTO`. |
 | `src/main/java/.../service/` | Avaliação, orquestração, formatação e envio. |
 | `src/main/java/.../source/` | Contrato e implementação da fonte de produtos. |
 | `src/main/java/.../validation/` | `ProductValidator`. |

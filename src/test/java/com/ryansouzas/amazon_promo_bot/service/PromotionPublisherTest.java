@@ -1,7 +1,7 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
 import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,11 +32,11 @@ public class PromotionPublisherTest {
     @InjectMocks
     private PromotionPublisher promotionPublisher;
 
-    private Product product;
+    private ProductDTO productDTO;
 
     @BeforeEach
     void setUp() {
-        product = new Product(
+        productDTO = new ProductDTO(
                 "AMZ-001",
                 "Mouse Gamer",
                 ORIGINAL_PRICE,
@@ -48,7 +48,7 @@ public class PromotionPublisherTest {
     @Test
     void shouldPublishPromotionSuccessfully() {
 
-        promotionPublisher.publish(product, DISCOUNT);
+        promotionPublisher.publish(productDTO, DISCOUNT);
 
         verify(telegramService, times(1))
                 .sendMessage(anyString());
@@ -60,7 +60,7 @@ public class PromotionPublisherTest {
         ArgumentCaptor<String> messageCaptor =
                 ArgumentCaptor.forClass(String.class);
 
-        promotionPublisher.publish(product, DISCOUNT);
+        promotionPublisher.publish(productDTO, DISCOUNT);
 
         verify(telegramService).sendMessage(
                 messageCaptor.capture()
@@ -97,7 +97,7 @@ public class PromotionPublisherTest {
 
         TelegramIntegrationException exception = assertThrows(
                 TelegramIntegrationException.class,
-                () -> promotionPublisher.publish(product, DISCOUNT)
+                () -> promotionPublisher.publish(productDTO, DISCOUNT)
         );
 
         Assertions.assertSame(expectedException, exception);

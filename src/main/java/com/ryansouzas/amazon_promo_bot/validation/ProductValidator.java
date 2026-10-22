@@ -1,7 +1,7 @@
 package com.ryansouzas.amazon_promo_bot.validation;
 
 import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
-import com.ryansouzas.amazon_promo_bot.model.Product;
+import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -10,31 +10,31 @@ import java.net.URI;
 @Component
 public class ProductValidator {
 
-    public void validate(Product product) {
-        if (product == null){
+    public void validate(ProductDTO productDTO) {
+        if (productDTO == null){
             throw new InvalidProductException("Product cannot be null");
         }
 
-        if (isBlank(product.externalId())) {
+        if (isBlank(productDTO.externalId())) {
             throw new InvalidProductException(
                     "Product external ID is required"
             );
         }
 
-        if (isBlank(product.name())) {
+        if (isBlank(productDTO.name())) {
             throw new InvalidProductException(
                     "Product name is required"
             );
         }
 
-        validatePrices(product);
-        validateUrl(product.url());
+        validatePrices(productDTO);
+        validateUrl(productDTO.url());
     }
 
 
-    private void validatePrices(Product product) {
-        BigDecimal original =  product.originalPrice();
-        BigDecimal currentPrice = product.currentPrice();
+    private void validatePrices(ProductDTO productDTO) {
+        BigDecimal original =  productDTO.originalPrice();
+        BigDecimal currentPrice = productDTO.currentPrice();
 
         if (original == null || currentPrice == null){
             throw new InvalidProductException("Product prices cannot be null");
