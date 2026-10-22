@@ -1,6 +1,6 @@
 package com.ryansouzas.amazon_promo_bot.validation;
 
-import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
+import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

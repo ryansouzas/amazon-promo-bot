@@ -1,6 +1,6 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
-import com.ryansouzas.amazon_promo_bot.exceptions.InvalidProductException;
+import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
