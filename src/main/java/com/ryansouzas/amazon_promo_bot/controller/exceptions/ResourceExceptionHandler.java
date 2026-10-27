@@ -1,5 +1,6 @@
 package com.ryansouzas.amazon_promo_bot.controller.exceptions;
 
+import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ProductExistsException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +38,17 @@ public class ResourceExceptionHandler {
         return ResponseEntity.status(status).body(err);
     }
 
+    @ExceptionHandler(InvalidProductException.class)
+    public ResponseEntity<StandardError> invalidProduct(InvalidProductException e, HttpServletRequest request){
+        HttpStatus status = HttpStatus.CONFLICT;
+        StandardError err = new StandardError();
+        err.setTimestamp(Instant.now());
+        err.setStatus(status.value());
+        err.setError("Invalid product");
+        err.setMessage(e.getMessage());
+        err.setPath(request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
 
 
 
