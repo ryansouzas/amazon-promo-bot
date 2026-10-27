@@ -1,14 +1,14 @@
 package com.ryansouzas.amazon_promo_bot.mapper;
 
-import com.ryansouzas.amazon_promo_bot.entities.ProductEntity;
+import com.ryansouzas.amazon_promo_bot.entities.Product;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ProductMapper {
 
-    public ProductEntity toEntity(ProductDTO productDTO) {
-        return new ProductEntity(
+    public Product toEntity(ProductDTO productDTO) {
+        return new Product(
                 productDTO.externalId(),
                 productDTO.name(),
                 productDTO.originalPrice(),
@@ -17,7 +17,7 @@ public class ProductMapper {
         );
     }
 
-    public ProductDTO toDTO(ProductEntity entity) {
+    public ProductDTO toDTO(Product entity) {
         return new ProductDTO(
                 entity.getExternalId(),
                 entity.getName(),

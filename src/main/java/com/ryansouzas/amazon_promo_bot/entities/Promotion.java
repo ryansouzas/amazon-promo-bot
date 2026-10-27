@@ -13,7 +13,7 @@ import java.util.UUID;
 @Table(name = "promotions")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PromotionEntity {
+public class Promotion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -40,11 +40,11 @@ public class PromotionEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
-    private ProductEntity product;
+    private Product product;
 
 
-    public PromotionEntity(
-            ProductEntity product,
+    public Promotion(
+            Product product,
             BigDecimal originalPrice,
             BigDecimal publishedPrice,
             BigDecimal discountPercentage,

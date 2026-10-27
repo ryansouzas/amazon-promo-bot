@@ -1,8 +1,8 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
-import com.ryansouzas.amazon_promo_bot.entities.PriceHistoryEntity;
-import com.ryansouzas.amazon_promo_bot.entities.ProductEntity;
+import com.ryansouzas.amazon_promo_bot.entities.PriceHistory;
+import com.ryansouzas.amazon_promo_bot.entities.Product;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ProductExistsException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ResourceNotFoundException;
 import com.ryansouzas.amazon_promo_bot.mapper.ProductMapper;
@@ -39,8 +39,8 @@ public class ProductService {
             throw new ProductExistsException("Product Already Exists");
         }
 
-        ProductEntity entity = productMapper.toEntity(productDTO);
-        ProductEntity saved = productRepository.save(entity);
+        Product entity = productMapper.toEntity(productDTO);
+        Product saved = productRepository.save(entity);
         savePriceHistory(saved);
 
         return productMapper.toDTO(saved);
@@ -52,7 +52,7 @@ public class ProductService {
 
         validator.validate(productDTO);
 
-        ProductEntity entity = productRepository
+        Product entity = productRepository
                 .findByExternalId(productDTO.externalId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(productDTO.externalId())
@@ -64,9 +64,7 @@ public class ProductService {
     }
 
     // Atualiza os dados e registra histórico se houver alteração de preço
-    private void updateExistingProduct(
-            ProductEntity entity,
-            ProductDTO productDTO) {
+    private void updateExistingProduct(Product entity, ProductDTO productDTO) {
 
         boolean priceChanged =
                 entity.getOriginalPrice()
@@ -86,9 +84,9 @@ public class ProductService {
     }
 
     // Registra os preços atuais no histórico
-    private void savePriceHistory(ProductEntity entity) {
+    private void savePriceHistory(Product entity) {
 
-        PriceHistoryEntity history = new PriceHistoryEntity(
+        PriceHistory history = new PriceHistory(
                 entity,
                 entity.getOriginalPrice(),
                 entity.getCurrentPrice()

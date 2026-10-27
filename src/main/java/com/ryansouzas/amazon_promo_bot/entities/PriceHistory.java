@@ -13,7 +13,7 @@ import java.util.UUID;
 @Table(name = "price_history")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PriceHistoryEntity {
+public class PriceHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,10 +33,10 @@ public class PriceHistoryEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
-    private ProductEntity product;
+    private Product product;
 
-    public PriceHistoryEntity(
-            ProductEntity product,
+    public PriceHistory(
+            Product product,
             BigDecimal originalPrice,
             BigDecimal currentPrice
     ) {

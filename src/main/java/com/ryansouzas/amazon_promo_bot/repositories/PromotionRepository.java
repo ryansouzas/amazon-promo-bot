@@ -1,17 +1,17 @@
 package com.ryansouzas.amazon_promo_bot.repositories;
 
 
-import com.ryansouzas.amazon_promo_bot.entities.PromotionEntity;
+import com.ryansouzas.amazon_promo_bot.entities.Promotion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface PromotionRepository extends JpaRepository<PromotionEntity, UUID> {
+public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
 
-    List<PromotionEntity> findByProductIdOrderByPublishedAtDesc(UUID productId);
+    List<Promotion> findByProductIdOrderByPublishedAtDesc(UUID productId);
 
-    Optional<PromotionEntity>
+    Optional<Promotion>
     findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(UUID productId, String telegramChatId);
 }

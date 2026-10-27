@@ -16,7 +16,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductEntity {
+public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -47,8 +47,8 @@ public class ProductEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public ProductEntity(String externalId, String name,
-                         BigDecimal originalPrice, BigDecimal currentPrice, String url) {
+    public Product(String externalId, String name,
+                   BigDecimal originalPrice, BigDecimal currentPrice, String url) {
         this.externalId = externalId;
         this.name = name;
         this.originalPrice = originalPrice;
