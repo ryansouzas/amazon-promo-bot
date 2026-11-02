@@ -50,7 +50,7 @@ public class PromotionService {
 
                 Product storedProduct = productRepository
                         .findByExternalId(productDTO.externalId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
+                                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
                 Optional<Promotion> lastPublication =
                         promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
@@ -70,28 +70,26 @@ public class PromotionService {
 
                 promotionPublisher.publish(productDTO, discount);
 
-                registerPublication(productDTO, discount);
+                registerPublication(storedProduct,productDTO, discount);
 
             }catch (InvalidProductException e){
                 log.warn("Invalid product {}", e.getMessage());
 
             }catch (TelegramIntegrationException e){
                 log.warn("Failed to publish product {}", productDTO.externalId());
+            } catch (ResourceNotFoundException e) {
+                log.warn("Resource not found {}", productDTO.externalId());
             }
         });
 
     }
 
-    private void registerPublication(ProductDTO productDTO, BigDecimal discount) {
-
-        Product product = productRepository
-                .findByExternalId(productDTO.externalId())
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+    private void registerPublication(Product product,ProductDTO productDTO, BigDecimal discount) {
 
         Promotion promotion = new Promotion(
                 product,
-                product.getOriginalPrice(),
-                product.getCurrentPrice(),
+                productDTO.originalPrice(),
+                productDTO.currentPrice(),
                 discount,
                 telegramProperties.chatId()
         );
