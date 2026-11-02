@@ -63,6 +63,25 @@ public class ProductService {
         return productMapper.toDTO(entity);
     }
 
+    @Transactional
+    public Product syncProduct(ProductDTO productDTO) {
+        validator.validate(productDTO);
+
+        Optional<Product> existingProduct = productRepository.findByExternalId(productDTO.externalId());
+
+        if (existingProduct.isPresent()) {
+            Product entity = existingProduct.get();
+
+            updateExistingProduct(entity, productDTO);
+            return entity;
+        }
+
+        Product entity = productMapper.toEntity(productDTO);
+        Product savedProduct = productRepository.save(entity);
+        savePriceHistory(savedProduct);
+        return savedProduct;
+    }
+
     // Atualiza os dados e registra histórico se houver alteração de preço
     private void updateExistingProduct(Product entity, ProductDTO productDTO) {
 

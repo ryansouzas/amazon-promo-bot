@@ -33,7 +33,7 @@ public class PromotionService {
     private final PromotionPublisher promotionPublisher;
 
     private final PromotionRepository promotionRepository;
-    private final ProductRepository productRepository;
+    private final ProductService productService;
     private final TelegramProperties telegramProperties;
 
     public void publishPromotions(){
@@ -42,15 +42,13 @@ public class PromotionService {
             try {
                 productValidator.validate(productDTO);
 
+                Product storedProduct = productService.syncProduct(productDTO);
+
                 if (!promotionEvaluator.isPromotion(productDTO)) {
                     return;
                 }
 
                 BigDecimal discount = promotionEvaluator.calculateDiscount(productDTO);
-
-                Product storedProduct = productRepository
-                        .findByExternalId(productDTO.externalId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
                 Optional<Promotion> lastPublication =
                         promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
