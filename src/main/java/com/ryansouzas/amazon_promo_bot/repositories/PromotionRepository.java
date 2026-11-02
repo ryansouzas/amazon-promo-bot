@@ -12,6 +12,5 @@ public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
 
     List<Promotion> findByProductIdOrderByPublishedAtDesc(UUID productId);
 
-    Optional<Promotion>
-    findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(UUID productId, String telegramChatId);
+    Optional<Promotion> findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(UUID productId, String telegramChatId);
 }

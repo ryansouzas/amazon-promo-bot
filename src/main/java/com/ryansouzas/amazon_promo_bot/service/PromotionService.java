@@ -16,7 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -34,26 +37,46 @@ public class PromotionService {
     private final TelegramProperties telegramProperties;
 
     public void publishPromotions(){
-        List<ProductDTO> productDTOS = productSource.findProducts();
-        productDTOS.forEach(product -> {
+        List<ProductDTO> products = productSource.findProducts();
+        products.forEach(productDTO -> {
             try {
-                productValidator.validate(product);
+                productValidator.validate(productDTO);
 
-                if (!promotionEvaluator.isPromotion(product)) {
+                if (!promotionEvaluator.isPromotion(productDTO)) {
                     return;
                 }
 
-                BigDecimal discount = promotionEvaluator.calculateDiscount(product);
+                BigDecimal discount = promotionEvaluator.calculateDiscount(productDTO);
 
-                promotionPublisher.publish(product, discount);
+                Product storedProduct = productRepository
+                        .findByExternalId(productDTO.externalId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
 
-                registerPublication(product, discount);
+                Optional<Promotion> lastPublication =
+                        promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                                storedProduct.getId(),
+                                telegramProperties.chatId()
+                        );
+
+                boolean publish = shouldPublish(
+                        productDTO.currentPrice(),
+                        lastPublication,
+                        Instant.now()
+                );
+
+                if (!publish) {
+                    return;
+                }
+
+                promotionPublisher.publish(productDTO, discount);
+
+                registerPublication(productDTO, discount);
 
             }catch (InvalidProductException e){
                 log.warn("Invalid product {}", e.getMessage());
 
             }catch (TelegramIntegrationException e){
-                log.warn("Failed to publish product {}", product.externalId());
+                log.warn("Failed to publish product {}", productDTO.externalId());
             }
         });
 
@@ -74,6 +97,36 @@ public class PromotionService {
         );
 
         promotionRepository.save(promotion);
+    }
+
+    private boolean shouldPublish(BigDecimal currentPrice, Optional<Promotion> lastPublication,
+                                  Instant now) {
+
+        if (lastPublication.isEmpty()) {
+            return true;
+        }
+
+        Promotion lastPromotion = lastPublication.get();
+
+        BigDecimal lastPrice = lastPromotion.getPublishedPrice();
+
+        int comparison = currentPrice.compareTo(lastPrice);
+
+        if (comparison < 0) {
+            return true;
+        }
+
+        if (comparison > 0) {
+            return false;
+        }
+
+        // Mesmo preço: verificar intervalo de 24 horas
+        Duration elapsedTime = Duration.between(
+                lastPromotion.getPublishedAt(),
+                now
+        );
+
+        return elapsedTime.compareTo(Duration.ofHours(24)) >= 0;
     }
 
 
