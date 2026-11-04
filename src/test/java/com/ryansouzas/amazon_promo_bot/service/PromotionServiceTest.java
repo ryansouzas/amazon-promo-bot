@@ -1,5 +1,9 @@
 package com.ryansouzas.amazon_promo_bot.service;
 
+import com.ryansouzas.amazon_promo_bot.config.TelegramProperties;
+import com.ryansouzas.amazon_promo_bot.entities.Product;
+import com.ryansouzas.amazon_promo_bot.entities.Promotion;
+import com.ryansouzas.amazon_promo_bot.repositories.PromotionRepository;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
@@ -13,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -32,11 +38,21 @@ class PromotionServiceTest {
     @Mock
     private PromotionPublisher promotionPublisher;
 
+    @Mock
+    private PromotionRepository promotionRepository;
+
+    @Mock
+    private ProductService productService;
+
+    @Mock
+    private TelegramProperties telegramProperties;
+
     @InjectMocks
     private PromotionService promotionService;
 
     private ProductDTO validProductDTO;
     private ProductDTO invalidProductDTO;
+    private Product storedProduct;
 
     private static final BigDecimal DISCOUNT = new BigDecimal("50.00");
 
@@ -59,6 +75,16 @@ class PromotionServiceTest {
                 "https://example.com/invalid"
         );
 
+        storedProduct = new Product(
+                validProductDTO.externalId(),
+                validProductDTO.name(),
+                validProductDTO.originalPrice(),
+                validProductDTO.currentPrice(),
+                validProductDTO.url()
+        );
+        storedProduct.setId(UUID.randomUUID());
+
+
     }
 
     @Test
@@ -68,12 +94,24 @@ class PromotionServiceTest {
         when(productSource.findProducts())
                 .thenReturn(List.of(validProductDTO));
 
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+
         when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(true);
 
         when(promotionEvaluator.calculateDiscount(validProductDTO))
                 .thenReturn(DISCOUNT);
 
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                storedProduct.getId(),
+                "123456"
+        ))
+                .thenReturn(Optional.empty());
 
         promotionService.publishPromotions();
 
@@ -82,6 +120,10 @@ class PromotionServiceTest {
 
         verify(promotionPublisher)
                 .publish(validProductDTO, DISCOUNT);
+
+        verify(productService).syncProduct(validProductDTO);
+
+        verify(promotionRepository).save(any(Promotion.class));
     }
 
     @Test
@@ -89,6 +131,9 @@ class PromotionServiceTest {
 
         when(productSource.findProducts())
                 .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
 
         when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(false);
@@ -100,7 +145,11 @@ class PromotionServiceTest {
         verify(promotionEvaluator, never())
                 .calculateDiscount(any());
 
+        verify(productService).syncProduct(validProductDTO);
+
         verifyNoInteractions(promotionPublisher);
+
+        verifyNoInteractions(promotionRepository);
     }
 
     @Test
@@ -131,24 +180,44 @@ class PromotionServiceTest {
                 .when(productValidator)
                 .validate(invalidProductDTO);
 
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
         when(promotionEvaluator.isPromotion(validProductDTO))
                 .thenReturn(true);
 
         when(promotionEvaluator.calculateDiscount(validProductDTO))
                 .thenReturn(DISCOUNT);
 
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.empty());
+
         promotionService.publishPromotions();
 
         verify(productValidator).validate(invalidProductDTO);
         verify(productValidator).validate(validProductDTO);
+
+        verify(productService).syncProduct(validProductDTO);
+
+        verify(productService, never())
+                .syncProduct(invalidProductDTO);
 
         verify(promotionPublisher)
                 .publish(validProductDTO, DISCOUNT);
 
         verify(promotionPublisher, never())
                 .publish(eq(invalidProductDTO), any(BigDecimal.class));
-    }
 
+        verify(promotionRepository)
+                .save(any(Promotion.class));
+    }
 
     @Test
     void shouldHandleEmptyProductList() {
@@ -166,6 +235,8 @@ class PromotionServiceTest {
         verifyNoInteractions(productValidator);
         verifyNoInteractions(promotionEvaluator);
         verifyNoInteractions(promotionPublisher);
+        verifyNoInteractions(productService);
+        verifyNoInteractions(promotionRepository);
     }
 
 

@@ -95,8 +95,7 @@ public class PromotionService {
         promotionRepository.save(promotion);
     }
 
-    private boolean shouldPublish(BigDecimal currentPrice, Optional<Promotion> lastPublication,
-                                  Instant now) {
+    private boolean shouldPublish(BigDecimal currentPrice, Optional<Promotion> lastPublication, Instant now) {
 
         if (lastPublication.isEmpty()) {
             return true;
@@ -124,6 +123,5 @@ public class PromotionService {
 
         return elapsedTime.compareTo(Duration.ofHours(24)) >= 0;
     }
-
 
 }
