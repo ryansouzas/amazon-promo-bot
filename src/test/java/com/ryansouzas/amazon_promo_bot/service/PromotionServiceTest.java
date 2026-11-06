@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,6 +48,9 @@ class PromotionServiceTest {
 
     @Mock
     private TelegramProperties telegramProperties;
+
+    @Mock
+    private Promotion promotion;
 
     @InjectMocks
     private PromotionService promotionService;
@@ -88,7 +93,7 @@ class PromotionServiceTest {
     }
 
     @Test
-    void shouldPublishValidPromotion() {
+    void shouldPublishWhenValidPromotion() {
 
 
         when(productSource.findProducts())
@@ -127,7 +132,7 @@ class PromotionServiceTest {
     }
 
     @Test
-    void shouldNotPublishProductWithoutPromotion() {
+    void shouldNotPublishWhenProductWithoutPromotion() {
 
         when(productSource.findProducts())
                 .thenReturn(List.of(validProductDTO));
@@ -237,6 +242,209 @@ class PromotionServiceTest {
         verifyNoInteractions(promotionPublisher);
         verifyNoInteractions(productService);
         verifyNoInteractions(promotionRepository);
+    }
+
+    @Test
+    void shouldPublishWhenNeverPublished() {
+
+        // Arrange
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+        when(promotionEvaluator.isPromotion(validProductDTO))
+                .thenReturn(true);
+
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
+                .thenReturn(DISCOUNT);
+
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.empty());
+
+        // Act
+        promotionService.publishPromotions();
+
+        // Assert
+        verify(promotionPublisher, times(1))
+                .publish(validProductDTO, DISCOUNT);
+
+        verify(promotionRepository, times(1))
+                .save(any(Promotion.class));
+    }
+
+    @Test
+    void shouldPublishWhenPriceDecreases() {
+
+        // Arrange
+        when(promotion.getPublishedPrice())
+                .thenReturn(new BigDecimal("250.00"));
+
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+        when(promotionEvaluator.isPromotion(validProductDTO))
+                .thenReturn(true);
+
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
+                .thenReturn(DISCOUNT);
+
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.of(promotion));
+
+        // Act
+        promotionService.publishPromotions();
+
+        // Assert
+        verify(promotionPublisher, times(1))
+                .publish(validProductDTO, DISCOUNT);
+
+        verify(promotionRepository, times(1))
+                .save(any(Promotion.class));
+    }
+
+    @Test
+    void shouldNotPublishWhenPriceIncreases() {
+
+        // Arrange
+        when(promotion.getPublishedPrice())
+                .thenReturn(new BigDecimal("80.00"));
+
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+        when(promotionEvaluator.isPromotion(validProductDTO))
+                .thenReturn(true);
+
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
+                .thenReturn(DISCOUNT);
+
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.of(promotion));
+
+        // Act
+        promotionService.publishPromotions();
+
+        // Assert
+        verify(promotionPublisher, never())
+                .publish(any(ProductDTO.class), any(BigDecimal.class));
+
+        verify(promotionRepository, never())
+                .save(any(Promotion.class));
+    }
+
+    @Test
+    void shouldNotPublishSamePriceBefore24Hours() {
+
+        // Arrange
+        when(promotion.getPublishedPrice())
+                .thenReturn(validProductDTO.currentPrice());
+
+        when(promotion.getPublishedAt())
+                .thenReturn(Instant.now().minus(Duration.ofHours(12)));
+
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+        when(promotionEvaluator.isPromotion(validProductDTO))
+                .thenReturn(true);
+
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
+                .thenReturn(DISCOUNT);
+
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.of(promotion));
+
+        // Act
+        promotionService.publishPromotions();
+
+        // Assert
+        verify(promotionPublisher, never())
+                .publish(any(ProductDTO.class), any(BigDecimal.class));
+
+        verify(promotionRepository, never())
+                .save(any(Promotion.class));
+    }
+
+    @Test
+    void shouldPublishSamePriceAfter24Hours() {
+
+        // Arrange
+        when(promotion.getPublishedPrice())
+                .thenReturn(validProductDTO.currentPrice());
+
+        when(promotion.getPublishedAt())
+                .thenReturn(Instant.now().minus(Duration.ofHours(25)));
+
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenReturn(storedProduct);
+
+        when(promotionEvaluator.isPromotion(validProductDTO))
+                .thenReturn(true);
+
+        when(promotionEvaluator.calculateDiscount(validProductDTO))
+                .thenReturn(DISCOUNT);
+
+        when(telegramProperties.chatId())
+                .thenReturn("123456");
+
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                        storedProduct.getId(),
+                        "123456"
+                ))
+                .thenReturn(Optional.of(promotion));
+
+        // Act
+        promotionService.publishPromotions();
+
+        // Assert
+        verify(promotionPublisher, times(1))
+                .publish(validProductDTO, DISCOUNT);
+
+        verify(promotionRepository, times(1))
+                .save(any(Promotion.class));
     }
 
 
