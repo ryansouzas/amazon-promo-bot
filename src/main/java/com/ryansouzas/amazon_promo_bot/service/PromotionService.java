@@ -6,6 +6,7 @@ import com.ryansouzas.amazon_promo_bot.entities.Promotion;
 import com.ryansouzas.amazon_promo_bot.repositories.ProductRepository;
 import com.ryansouzas.amazon_promo_bot.repositories.PromotionRepository;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
+import com.ryansouzas.amazon_promo_bot.service.exceptions.PublicationInProgressException;
 import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
@@ -41,7 +42,7 @@ public class PromotionService {
     public void publishPromotions(){
         if (!publishLock.tryLock()) {
             log.warn("Publication already in progress, skipping execution");
-            return;
+            throw new PublicationInProgressException("Publication already in progress");
         }
 
         try {

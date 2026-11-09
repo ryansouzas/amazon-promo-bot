@@ -1,6 +1,7 @@
 package com.ryansouzas.amazon_promo_bot.controller.exceptions;
 
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
+import com.ryansouzas.amazon_promo_bot.service.exceptions.PublicationInProgressException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ProductExistsException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +46,18 @@ public class ResourceExceptionHandler {
         err.setTimestamp(Instant.now());
         err.setStatus(status.value());
         err.setError("Invalid product");
+        err.setMessage(e.getMessage());
+        err.setPath(request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
+
+    @ExceptionHandler(PublicationInProgressException.class)
+    public ResponseEntity<StandardError> publicationInProgress(PublicationInProgressException e, HttpServletRequest request){
+        HttpStatus status = HttpStatus.CONFLICT;
+        StandardError err = new StandardError();
+        err.setTimestamp(Instant.now());
+        err.setStatus(status.value());
+        err.setError("Publication in progress");
         err.setMessage(e.getMessage());
         err.setPath(request.getRequestURI());
         return ResponseEntity.status(status).body(err);
