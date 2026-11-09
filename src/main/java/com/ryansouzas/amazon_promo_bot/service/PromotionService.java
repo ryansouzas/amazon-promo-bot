@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
@@ -35,50 +36,60 @@ public class PromotionService {
     private final ProductService productService;
     private final TelegramProperties telegramProperties;
 
+    private final ReentrantLock publishLock = new ReentrantLock();
+
     public void publishPromotions(){
-        List<ProductDTO> products = productSource.findProducts();
-        products.forEach(productDTO -> {
-            try {
-                productValidator.validate(productDTO);
+        if (!publishLock.tryLock()) {
+            log.warn("Publication already in progress, skipping execution");
+            return;
+        }
 
-                Product storedProduct = productService.syncProduct(productDTO);
+        try {
+            List<ProductDTO> products = productSource.findProducts();
+            products.forEach(productDTO -> {
+                try {
+                    productValidator.validate(productDTO);
 
-                if (!promotionEvaluator.isPromotion(productDTO)) {
-                    return;
+                    Product storedProduct = productService.syncProduct(productDTO);
+
+                    if (!promotionEvaluator.isPromotion(productDTO)) {
+                        return;
+                    }
+
+                    BigDecimal discount = promotionEvaluator.calculateDiscount(productDTO);
+
+                    Optional<Promotion> lastPublication =
+                            promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                                    storedProduct.getId(),
+                                    telegramProperties.chatId()
+                            );
+
+                    boolean publish = shouldPublish(
+                            productDTO.currentPrice(),
+                            lastPublication,
+                            Instant.now()
+                    );
+
+                    if (!publish) {
+                        return;
+                    }
+
+                    promotionPublisher.publish(productDTO, discount);
+
+                    registerPublication(storedProduct, productDTO, discount);
+
+                } catch (InvalidProductException e) {
+                    log.warn("Invalid product {}", e.getMessage());
+
+                } catch (TelegramIntegrationException e) {
+                    log.warn("Failed to publish product {}", productDTO.externalId());
+                } catch (Exception e) {
+                    log.error("Unexpected error processing product {}", productDTO.externalId(), e);
                 }
-
-                BigDecimal discount = promotionEvaluator.calculateDiscount(productDTO);
-
-                Optional<Promotion> lastPublication =
-                        promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
-                                storedProduct.getId(),
-                                telegramProperties.chatId()
-                        );
-
-                boolean publish = shouldPublish(
-                        productDTO.currentPrice(),
-                        lastPublication,
-                        Instant.now()
-                );
-
-                if (!publish) {
-                    return;
-                }
-
-                promotionPublisher.publish(productDTO, discount);
-
-                registerPublication(storedProduct,productDTO, discount);
-
-            }catch (InvalidProductException e){
-                log.warn("Invalid product {}", e.getMessage());
-
-            }catch (TelegramIntegrationException e){
-                log.warn("Failed to publish product {}", productDTO.externalId());
-            } catch (Exception e) {
-                log.error("Unexpected error processing product {}", productDTO.externalId(), e);
-            }
-        });
-
+            });
+        } finally {
+            publishLock.unlock();
+        }
     }
 
     private void registerPublication(Product product,ProductDTO productDTO, BigDecimal discount) {
