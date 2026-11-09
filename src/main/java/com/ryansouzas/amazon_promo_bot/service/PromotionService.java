@@ -8,7 +8,6 @@ import com.ryansouzas.amazon_promo_bot.repositories.PromotionRepository;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
-import com.ryansouzas.amazon_promo_bot.service.exceptions.ResourceNotFoundException;
 import com.ryansouzas.amazon_promo_bot.source.ProductSource;
 import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import lombok.RequiredArgsConstructor;
@@ -75,8 +74,6 @@ public class PromotionService {
 
             }catch (TelegramIntegrationException e){
                 log.warn("Failed to publish product {}", productDTO.externalId());
-            } catch (ResourceNotFoundException e) {
-                log.warn("Resource not found {}", productDTO.externalId());
             }
         });
 
