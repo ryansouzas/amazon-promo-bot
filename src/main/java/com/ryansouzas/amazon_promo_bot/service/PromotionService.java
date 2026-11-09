@@ -74,6 +74,8 @@ public class PromotionService {
 
             }catch (TelegramIntegrationException e){
                 log.warn("Failed to publish product {}", productDTO.externalId());
+            } catch (Exception e) {
+                log.error("Unexpected error processing product {}", productDTO.externalId(), e);
             }
         });
 
