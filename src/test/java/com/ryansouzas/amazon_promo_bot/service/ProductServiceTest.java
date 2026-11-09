@@ -40,7 +40,6 @@ public class ProductServiceTest {
     @InjectMocks
     private ProductService productService;
 
-    // Dependências do ProductService, todas substituídas por mocks
     @Mock
     private ProductRepository productRepository;
 

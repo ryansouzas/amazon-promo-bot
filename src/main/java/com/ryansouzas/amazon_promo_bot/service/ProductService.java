@@ -31,7 +31,6 @@ public class ProductService {
                 .map(productMapper::toDTO);
     }
 
-    // Valida e cadastra um novo produto, registrando seu histórico inicial
     @Transactional
     public ProductDTO createProduct(ProductDTO productDTO) {
         validator.validate(productDTO);
@@ -82,7 +81,6 @@ public class ProductService {
         return savedProduct;
     }
 
-    // Atualiza os dados e registra histórico se houver alteração de preço
     private void updateExistingProduct(Product entity, ProductDTO productDTO) {
 
         boolean priceChanged =
@@ -102,7 +100,6 @@ public class ProductService {
         }
     }
 
-    // Registra os preços atuais no histórico
     private void savePriceHistory(Product entity) {
 
         PriceHistory history = new PriceHistory(
