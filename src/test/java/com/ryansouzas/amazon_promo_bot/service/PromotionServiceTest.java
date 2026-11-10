@@ -459,6 +459,19 @@ class PromotionServiceTest {
 
     // ---------- helpers for the tests below ----------
 
+    private void stubPromotionFlow(ProductDTO dto, Product product) {
+        when(productService.syncProduct(dto)).thenReturn(product);
+        when(promotionEvaluator.isPromotion(dto)).thenReturn(true);
+        when(promotionEvaluator.calculateDiscount(dto)).thenReturn(DISCOUNT);
+    }
+
+    private void stubNoPreviousPublication(Product product) {
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
+                        eq(product.getId()), eq("123456"), any()))
+                .thenReturn(Optional.empty());
+    }
+
     // ---------- (a) lock ----------
 
     @Test
@@ -490,6 +503,45 @@ class PromotionServiceTest {
         }
 
         verify(productSource, times(1)).findProducts();
+    }
+
+    // ---------- (b) per-product error isolation ----------
+
+    @Test
+    void shouldProcessSecondProductWhenSyncProductThrowsRuntimeExceptionOnFirst() {
+
+        ProductDTO secondProductDTO = new ProductDTO(
+                "AMZ-002",
+                "Teclado Gamer",
+                new BigDecimal("300.00"),
+                new BigDecimal("150.00"),
+                "https://example.com/teclado"
+        );
+        Product secondStoredProduct = new Product(
+                secondProductDTO.externalId(),
+                secondProductDTO.name(),
+                secondProductDTO.originalPrice(),
+                secondProductDTO.currentPrice(),
+                secondProductDTO.url()
+        );
+        secondStoredProduct.setId(UUID.randomUUID());
+
+        when(productSource.findProducts())
+                .thenReturn(List.of(validProductDTO, secondProductDTO));
+
+        when(productService.syncProduct(validProductDTO))
+                .thenThrow(new RuntimeException("boom"));
+
+        stubPromotionFlow(secondProductDTO, secondStoredProduct);
+        when(telegramProperties.chatId()).thenReturn("123456");
+        stubNoPreviousPublication(secondStoredProduct);
+
+        promotionService.publishPromotions();
+
+        verify(productService).syncProduct(validProductDTO);
+        verify(productService).syncProduct(secondProductDTO);
+        verify(promotionPublisher, never()).publish(eq(validProductDTO), any(BigDecimal.class));
+        verify(promotionPublisher).publish(secondProductDTO, DISCOUNT);
     }
 
 }
