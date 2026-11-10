@@ -42,6 +42,10 @@ public class Promotion {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private PromotionStatus status;
+
 
     public Promotion(
             Product product,
@@ -55,5 +59,14 @@ public class Promotion {
         this.publishedPrice = publishedPrice;
         this.discountPercentage = discountPercentage;
         this.telegramChatId = telegramChatId;
+        this.status = PromotionStatus.PENDING;
+    }
+
+    public void markSent() {
+        this.status = PromotionStatus.SENT;
+    }
+
+    public void markFailed() {
+        this.status = PromotionStatus.FAILED;
     }
 }
