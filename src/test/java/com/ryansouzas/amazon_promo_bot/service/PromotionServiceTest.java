@@ -12,14 +12,17 @@ import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ryansouzas.amazon_promo_bot.exceptions.TelegramIntegrationException;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.PublicationInProgressException;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -472,6 +475,16 @@ class PromotionServiceTest {
                 .thenReturn(Optional.empty());
     }
 
+    private List<PromotionStatus> recordStatusOnEachSave() {
+        List<PromotionStatus> statuses = new ArrayList<>();
+        when(promotionRepository.save(any(Promotion.class))).thenAnswer(invocation -> {
+            Promotion saved = invocation.getArgument(0);
+            statuses.add(saved.getStatus());
+            return saved;
+        });
+        return statuses;
+    }
+
     // ---------- (a) lock ----------
 
     @Test
@@ -542,6 +555,49 @@ class PromotionServiceTest {
         verify(productService).syncProduct(secondProductDTO);
         verify(promotionPublisher, never()).publish(eq(validProductDTO), any(BigDecimal.class));
         verify(promotionPublisher).publish(secondProductDTO, DISCOUNT);
+    }
+
+    // ---------- (c) PENDING -> SENT / PENDING -> FAILED ----------
+
+    @Test
+    void shouldSavePendingBeforePublishingAndSentAfterSuccess() {
+
+        when(productSource.findProducts()).thenReturn(List.of(validProductDTO));
+        stubPromotionFlow(validProductDTO, storedProduct);
+        when(telegramProperties.chatId()).thenReturn("123456");
+        stubNoPreviousPublication(storedProduct);
+        List<PromotionStatus> statuses = recordStatusOnEachSave();
+
+        promotionService.publishPromotions();
+
+        assertEquals(List.of(PromotionStatus.PENDING, PromotionStatus.SENT), statuses);
+
+        InOrder inOrder = inOrder(promotionRepository, promotionPublisher);
+        inOrder.verify(promotionRepository).save(any(Promotion.class));
+        inOrder.verify(promotionPublisher).publish(validProductDTO, DISCOUNT);
+        inOrder.verify(promotionRepository).save(any(Promotion.class));
+    }
+
+    @Test
+    void shouldSavePendingBeforePublishingAndFailedWhenTelegramFails() {
+
+        when(productSource.findProducts()).thenReturn(List.of(validProductDTO));
+        stubPromotionFlow(validProductDTO, storedProduct);
+        when(telegramProperties.chatId()).thenReturn("123456");
+        stubNoPreviousPublication(storedProduct);
+        List<PromotionStatus> statuses = recordStatusOnEachSave();
+
+        doThrow(new TelegramIntegrationException("telegram down"))
+                .when(promotionPublisher).publish(validProductDTO, DISCOUNT);
+
+        promotionService.publishPromotions();
+
+        assertEquals(List.of(PromotionStatus.PENDING, PromotionStatus.FAILED), statuses);
+
+        InOrder inOrder = inOrder(promotionRepository, promotionPublisher);
+        inOrder.verify(promotionRepository).save(any(Promotion.class));
+        inOrder.verify(promotionPublisher).publish(validProductDTO, DISCOUNT);
+        inOrder.verify(promotionRepository).save(any(Promotion.class));
     }
 
 }
