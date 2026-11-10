@@ -12,6 +12,7 @@ import com.ryansouzas.amazon_promo_bot.validation.ProductValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -598,6 +600,54 @@ class PromotionServiceTest {
         inOrder.verify(promotionRepository).save(any(Promotion.class));
         inOrder.verify(promotionPublisher).publish(validProductDTO, DISCOUNT);
         inOrder.verify(promotionRepository).save(any(Promotion.class));
+    }
+
+    // ---------- (d) dedupe by status ----------
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldDedupeOnlyAgainstPendingAndSentSoFailedDoesNotBlockRetry() {
+
+        when(productSource.findProducts()).thenReturn(List.of(validProductDTO));
+        stubPromotionFlow(validProductDTO, storedProduct);
+        when(telegramProperties.chatId()).thenReturn("123456");
+        // A FAILED promotion is excluded by the status filter, so the query finds nothing.
+        stubNoPreviousPublication(storedProduct);
+
+        promotionService.publishPromotions();
+
+        ArgumentCaptor<Collection<PromotionStatus>> statusesCaptor =
+                ArgumentCaptor.forClass(Collection.class);
+        verify(promotionRepository)
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
+                        eq(storedProduct.getId()), eq("123456"), statusesCaptor.capture());
+
+        assertTrue(statusesCaptor.getValue().contains(PromotionStatus.PENDING));
+        assertTrue(statusesCaptor.getValue().contains(PromotionStatus.SENT));
+        assertFalse(statusesCaptor.getValue().contains(PromotionStatus.FAILED));
+
+        verify(promotionPublisher).publish(validProductDTO, DISCOUNT);
+    }
+
+    @Test
+    void shouldNotPublishAgainWhenPendingPromotionWithSamePriceExists() {
+
+        when(promotion.getPublishedPrice()).thenReturn(validProductDTO.currentPrice());
+        when(promotion.getPublishedAt()).thenReturn(Instant.now().minus(Duration.ofMinutes(5)));
+
+        when(productSource.findProducts()).thenReturn(List.of(validProductDTO));
+        stubPromotionFlow(validProductDTO, storedProduct);
+        when(telegramProperties.chatId()).thenReturn("123456");
+        when(promotionRepository
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
+                        eq(storedProduct.getId()), eq("123456"),
+                        argThat(statuses -> statuses.contains(PromotionStatus.PENDING))))
+                .thenReturn(Optional.of(promotion));
+
+        promotionService.publishPromotions();
+
+        verify(promotionPublisher, never()).publish(any(ProductDTO.class), any(BigDecimal.class));
+        verify(promotionRepository, never()).save(any(Promotion.class));
     }
 
 }
