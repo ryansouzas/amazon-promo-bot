@@ -131,7 +131,7 @@ class PromotionServiceTest {
 
         verify(productService).syncProduct(validProductDTO);
 
-        verify(promotionRepository).save(any(Promotion.class));
+        verify(promotionRepository, times(2)).save(any(Promotion.class));
     }
 
     @Test
@@ -223,7 +223,7 @@ class PromotionServiceTest {
         verify(promotionPublisher, never())
                 .publish(eq(invalidProductDTO), any(BigDecimal.class));
 
-        verify(promotionRepository)
+        verify(promotionRepository, times(2))
                 .save(any(Promotion.class));
     }
 
@@ -280,7 +280,7 @@ class PromotionServiceTest {
         verify(promotionPublisher, times(1))
                 .publish(validProductDTO, DISCOUNT);
 
-        verify(promotionRepository, times(1))
+        verify(promotionRepository, times(2))
                 .save(any(Promotion.class));
     }
 
@@ -320,7 +320,7 @@ class PromotionServiceTest {
         verify(promotionPublisher, times(1))
                 .publish(validProductDTO, DISCOUNT);
 
-        verify(promotionRepository, times(1))
+        verify(promotionRepository, times(2))
                 .save(any(Promotion.class));
     }
 
@@ -446,7 +446,7 @@ class PromotionServiceTest {
         verify(promotionPublisher, times(1))
                 .publish(validProductDTO, DISCOUNT);
 
-        verify(promotionRepository, times(1))
+        verify(promotionRepository, times(2))
                 .save(any(Promotion.class));
     }
 

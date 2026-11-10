@@ -80,9 +80,7 @@ public class PromotionService {
                         return;
                     }
 
-                    promotionPublisher.publish(productDTO, discount);
-
-                    registerPublication(storedProduct, productDTO, discount);
+                    publishAtMostOnce(storedProduct, productDTO, discount);
 
                 } catch (InvalidProductException e) {
                     log.warn("Invalid product {}", e.getMessage());
@@ -98,7 +96,7 @@ public class PromotionService {
         }
     }
 
-    private void registerPublication(Product product,ProductDTO productDTO, BigDecimal discount) {
+    private void publishAtMostOnce(Product product, ProductDTO productDTO, BigDecimal discount) {
 
         Promotion promotion = new Promotion(
                 product,
@@ -108,6 +106,17 @@ public class PromotionService {
                 telegramProperties.chatId()
         );
 
+        promotionRepository.save(promotion);
+
+        try {
+            promotionPublisher.publish(productDTO, discount);
+        } catch (TelegramIntegrationException e) {
+            promotion.markFailed();
+            promotionRepository.save(promotion);
+            throw e;
+        }
+
+        promotion.markSent();
         promotionRepository.save(promotion);
     }
 
