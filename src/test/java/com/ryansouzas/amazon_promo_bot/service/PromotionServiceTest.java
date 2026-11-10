@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ryansouzas.amazon_promo_bot.service.exceptions.PublicationInProgressException;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -22,7 +23,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -450,5 +457,39 @@ class PromotionServiceTest {
                 .save(any(Promotion.class));
     }
 
+    // ---------- helpers for the tests below ----------
+
+    // ---------- (a) lock ----------
+
+    @Test
+    void shouldSkipConcurrentExecutionAndQueryProductSourceOnlyOnce() throws Exception {
+
+        CountDownLatch firstRunStarted = new CountDownLatch(1);
+        CountDownLatch releaseFirstRun = new CountDownLatch(1);
+
+        when(productSource.findProducts()).thenAnswer(invocation -> {
+            firstRunStarted.countDown();
+            releaseFirstRun.await(5, TimeUnit.SECONDS);
+            return List.of();
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> firstRun = executor.submit(() -> promotionService.publishPromotions());
+
+            assertTrue(firstRunStarted.await(5, TimeUnit.SECONDS));
+
+            assertThrows(PublicationInProgressException.class,
+                    () -> promotionService.publishPromotions());
+
+            releaseFirstRun.countDown();
+            firstRun.get(5, TimeUnit.SECONDS);
+        } finally {
+            releaseFirstRun.countDown();
+            executor.shutdownNow();
+        }
+
+        verify(productSource, times(1)).findProducts();
+    }
 
 }
