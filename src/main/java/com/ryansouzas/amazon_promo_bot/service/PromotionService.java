@@ -3,6 +3,7 @@ package com.ryansouzas.amazon_promo_bot.service;
 import com.ryansouzas.amazon_promo_bot.config.TelegramProperties;
 import com.ryansouzas.amazon_promo_bot.entities.Product;
 import com.ryansouzas.amazon_promo_bot.entities.Promotion;
+import com.ryansouzas.amazon_promo_bot.entities.PromotionStatus;
 import com.ryansouzas.amazon_promo_bot.repositories.ProductRepository;
 import com.ryansouzas.amazon_promo_bot.repositories.PromotionRepository;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
@@ -37,6 +38,9 @@ public class PromotionService {
     private final ProductService productService;
     private final TelegramProperties telegramProperties;
 
+    private static final List<PromotionStatus> BLOCKING_STATUSES =
+            List.of(PromotionStatus.PENDING, PromotionStatus.SENT);
+
     private final ReentrantLock publishLock = new ReentrantLock();
 
     public void publishPromotions(){
@@ -60,9 +64,10 @@ public class PromotionService {
                     BigDecimal discount = promotionEvaluator.calculateDiscount(productDTO);
 
                     Optional<Promotion> lastPublication =
-                            promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                            promotionRepository.findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                                     storedProduct.getId(),
-                                    telegramProperties.chatId()
+                                    telegramProperties.chatId(),
+                                    BLOCKING_STATUSES
                             );
 
                     boolean publish = shouldPublish(

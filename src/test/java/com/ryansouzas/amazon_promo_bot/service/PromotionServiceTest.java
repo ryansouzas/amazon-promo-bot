@@ -3,6 +3,7 @@ package com.ryansouzas.amazon_promo_bot.service;
 import com.ryansouzas.amazon_promo_bot.config.TelegramProperties;
 import com.ryansouzas.amazon_promo_bot.entities.Product;
 import com.ryansouzas.amazon_promo_bot.entities.Promotion;
+import com.ryansouzas.amazon_promo_bot.entities.PromotionStatus;
 import com.ryansouzas.amazon_promo_bot.repositories.PromotionRepository;
 import com.ryansouzas.amazon_promo_bot.service.exceptions.InvalidProductException;
 import com.ryansouzas.amazon_promo_bot.dto.ProductDTO;
@@ -60,6 +61,8 @@ class PromotionServiceTest {
     private Product storedProduct;
 
     private static final BigDecimal DISCOUNT = new BigDecimal("50.00");
+    private static final List<PromotionStatus> BLOCKING =
+            List.of(PromotionStatus.PENDING, PromotionStatus.SENT);
 
     @BeforeEach
     void setUp() {
@@ -112,10 +115,10 @@ class PromotionServiceTest {
         when(telegramProperties.chatId())
                 .thenReturn("123456");
 
-        when(promotionRepository.findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+        when(promotionRepository.findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                 storedProduct.getId(),
-                "123456"
-        ))
+                "123456",
+        BLOCKING))
                 .thenReturn(Optional.empty());
 
         promotionService.publishPromotions();
@@ -198,10 +201,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.empty());
 
         promotionService.publishPromotions();
@@ -264,10 +267,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.empty());
 
         // Act
@@ -304,10 +307,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.of(promotion));
 
         // Act
@@ -344,10 +347,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.of(promotion));
 
         // Act
@@ -387,10 +390,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.of(promotion));
 
         // Act
@@ -430,10 +433,10 @@ class PromotionServiceTest {
                 .thenReturn("123456");
 
         when(promotionRepository
-                .findFirstByProductIdAndTelegramChatIdOrderByPublishedAtDesc(
+                .findFirstByProductIdAndTelegramChatIdAndStatusInOrderByPublishedAtDesc(
                         storedProduct.getId(),
-                        "123456"
-                ))
+                        "123456",
+                BLOCKING))
                 .thenReturn(Optional.of(promotion));
 
         // Act
